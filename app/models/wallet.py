@@ -1,0 +1,30 @@
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from datetime import datetime
+
+class WalletBase(BaseModel):
+    owner_id: str
+    balance: float = 0.0
+
+class WalletCreate(WalletBase):
+    pass
+
+class WalletInDB(WalletBase):
+    id: str = Field(..., alias="_id")
+    paystack_account_id: Optional[str] = None
+    restrictions: List[str] = [] # e.g., ["withdrawal_restriction", "ban"]
+    created: datetime = Field(default_factory=datetime.utcnow)
+    lastUpdated: datetime = Field(default_factory=datetime.utcnow)
+
+class Transaction(BaseModel):
+    id: str = Field(..., alias="_id")
+    order_id: str
+    buyer_id: str
+    seller_id: str
+    agent_id: str
+    amount: float
+    app_fee: float
+    agent_commission: float
+    seller_amount: float
+    created: datetime = Field(default_factory=datetime.utcnow)
+    lastUpdated: datetime = Field(default_factory=datetime.utcnow)
