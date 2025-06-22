@@ -13,6 +13,8 @@ qrcode
 twilio
 brevo
 google-api-python-client
+google-cloud-aiplatform  # <-- Add this for Vertex AI / Gemini
+google-cloud-storage    # <-- Add this for storing images
 httpx
 slowapi
 face-recognition

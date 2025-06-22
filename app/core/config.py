@@ -33,7 +33,9 @@ class Settings(BaseSettings):
     BREVO_API_KEY: str
     GOOGLE_API_KEY: str
     GOOGLE_CSE_ID: str
-    IMAGE_GENERATION_API_KEY: str
+    GOOGLE_CLOUD_PROJECT: str
+    GOOGLE_CLOUD_REGION: str
+    GCS_BUCKET_NAME: str
 
     class Config:
         env_file = ".env"
