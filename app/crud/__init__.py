@@ -62,3 +62,4 @@ from .crud_notification import notification
 from .crud_order import purchase_order, sale_order
 from .crud_review import review
 from .crud_wallet import wallet, transaction
+from .crud_admin import admin

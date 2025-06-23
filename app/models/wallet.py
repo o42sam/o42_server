@@ -28,3 +28,9 @@ class Transaction(BaseModel):
     seller_amount: float
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
+
+class WithdrawalRequest(BaseModel):
+    amount: float = Field(..., gt=0, description="Amount to withdraw in NGN")
+    account_number: str = Field(..., description="Destination bank account number")
+    bank_code: str = Field(..., description="Paystack code for the destination bank")
+    two_fa_code: str = Field(..., min_length=6, max_length=6, description="6-digit 2FA code from authenticator app")

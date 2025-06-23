@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.core.config import settings
 from app.db.mongodb import get_db
 from app.models import token as token_model
-from app.crud import customer, agent
+from app.crud import customer, agent, admin as crud_admin
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
@@ -77,3 +77,21 @@ async def get_current_user_from_query(
         user["user_type"] = "agent"
         return user
     raise HTTPException(status_code=404, detail="User not found")
+
+async def get_current_admin(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+) -> dict:
+    """
+    Dependency to ensure the current user is an admin.
+    Raises a 403 Forbidden error if not.
+    """
+    # We check if a user with the same ID exists in the admins collection.
+    # This is a simple way to grant admin privileges.
+    admin_user = await db.admins.find_one({"_id": current_user["_id"]})
+    if not admin_user:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user does not have sufficient privileges."
+        )
+    return admin_user
