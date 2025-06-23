@@ -12,7 +12,7 @@ class WalletCreate(WalletBase):
 class WalletInDB(WalletBase):
     id: str = Field(..., alias="_id")
     paystack_account_id: Optional[str] = None
-    restrictions: List[str] = [] # e.g., ["withdrawal_restriction", "ban"]
+    restrictions: List[str] = []
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
 

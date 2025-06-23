@@ -1,4 +1,4 @@
-# app/services/image_generation.py
+
 
 import uuid
 import vertexai
@@ -10,15 +10,15 @@ from googleapiclient.errors import HttpError
 
 from app.core.config import settings
 
-# --- Initialize Google Cloud Services ---
+
 try:
-    # Initialize Vertex AI
+
     vertexai.init(project=settings.GOOGLE_CLOUD_PROJECT, location=settings.GOOGLE_CLOUD_REGION)
     
-    # Initialize Google Cloud Storage client
+
     storage_client = storage.Client(project=settings.GOOGLE_CLOUD_PROJECT)
     
-    # Initialize Google Search Client
+
     google_search_service = build("customsearch", "v1", developerKey=settings.GOOGLE_API_KEY)
 
 except Exception as e:
@@ -28,7 +28,7 @@ except Exception as e:
     google_search_service = None
 
 
-# --- Safeguards against misuse ---
+
 FORBIDDEN_PROMPT_KEYWORDS = [
     "nudity", "naked", "obscene", "violence", "hate speech",
     "self-harm", "graphic", "person", "celebrity", "portrait"
@@ -48,7 +48,7 @@ async def _upload_to_gcs(image_bytes: bytes, destination_blob_name: str) -> str:
             content_type="image/png"
         )
 
-        # Make the blob publicly viewable
+
         blob.make_public()
         
         return blob.public_url
@@ -64,25 +64,25 @@ async def generate_product_image_from_prompt(prompt: str) -> str:
     Generates an image using Vertex AI Gemini/Imagen, saves it to GCS, 
     and returns the public URL.
     """
-    # 1. Safeguard check
+
     if any(keyword in prompt.lower() for keyword in FORBIDDEN_PROMPT_KEYWORDS):
         raise ValueError("The provided description contains terms that are not allowed.")
 
     print(f"--- GENERATING IMAGE WITH VERTEX AI FOR PROMPT: '{prompt}' ---")
     
-    # 2. Instantiate the model
-    # Using 'imagegeneration@006' which is a powerful Imagen 2 model on Vertex AI
+
+
     model = ImageGenerationModel.from_pretrained("imagegeneration@006")
 
-    # 3. Generate the image
+
     try:
-        # Enhancing prompt for better e-commerce results
+
         enhanced_prompt = f"A professional, clean e-commerce product photo of: {prompt}. Centered, on a white background, without text or watermarks, hyper-realistic."
         
         response = model.generate_images(
             prompt=enhanced_prompt,
             number_of_images=1,
-            aspect_ratio="1:1",  # Square images are standard for marketplaces
+            aspect_ratio="1:1",
             safety_filter_level="block_most",
         )
 
@@ -95,8 +95,8 @@ async def generate_product_image_from_prompt(prompt: str) -> str:
         print(f"Error during Vertex AI image generation: {e}")
         raise Exception(f"Failed to generate product image: {e}")
 
-    # 4. Upload the image bytes to Google Cloud Storage
-    # Create a unique filename to avoid collisions
+
+
     filename = f"products/{uuid.uuid4()}.png"
     public_url = await _upload_to_gcs(image_bytes, filename)
     

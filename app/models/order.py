@@ -8,14 +8,14 @@ class SaleType(str, Enum):
     auction = "auction"
     negotiation = "negotiation"
 
-# Sale Order
+
 class SaleOrderBase(BaseModel):
     creator_id: str
     product_id: str
     sale_type: SaleType
-    price: float # For fixed-price, this is the price. For others, it's the starting price.
+    price: float
     commission_percentage: float = Field(..., ge=0, le=100)
-    location: Any # GeoJSON Point
+    location: Any
 
 class SaleOrderCreate(SaleOrderBase):
     pass
@@ -28,13 +28,19 @@ class SaleOrderInDB(SaleOrderBase):
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
 
-# Purchase Order
+
 class PurchaseOrderBase(BaseModel):
     creator_id: str
     product_description: str
-    product_image: str # URL to the generated image
+    product_image: str
+
+class PurchaseOrderCreateIn(BaseModel):
+    """Model for data coming IN from the client. Does not include creator_id."""
+    product_description: str
+    product_image: str
 
 class PurchaseOrderCreate(PurchaseOrderBase):
+    """Internal model used for creating the DB record. Includes server-set creator_id."""
     pass
 
 class PurchaseOrderInDB(PurchaseOrderBase):

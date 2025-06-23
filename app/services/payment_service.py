@@ -22,7 +22,7 @@ class PaystackService:
                 return response.json()
             except httpx.HTTPStatusError as e:
                 print(f"Paystack API Error: {e.response.status_code} - {e.response.text}")
-                # Re-raise with a more generic error to avoid leaking implementation details
+
                 raise Exception(f"Paystack service failed: {e.response.json().get('message', 'Unknown error')}")
             except Exception as e:
                 print(f"An unexpected error occurred with Paystack request: {e}")
@@ -45,11 +45,11 @@ class PaystackService:
         print(f"--- CREATING PAYSTACK VIRTUAL ACCOUNT for customer {customer_code} ---")
         payload = {
             "customer": customer_code,
-            "preferred_bank": "wema-bank"  # Or "titan-paystack", or use "test-bank" for test keys
+            "preferred_bank": "wema-bank"
         }
         response = await self._make_request("POST", "/dedicated_account", data=payload)
-        # The response is asynchronous, you'll get the final account via webhook
-        # but the initial response contains assignment status.
+
+
         return response.get("data", response)
 
     async def create_transfer_recipient(self, name: str, account_number: str, bank_code: str) -> Dict[str, Any]:

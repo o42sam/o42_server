@@ -25,7 +25,7 @@ async def register_customer(
     hashed_password = get_password_hash(customer_in.password)
     db_customer = {"email": customer_in.email, "hashed_password": hashed_password}
     created_customer = await crud_customer.customer.create(db, obj_in=db_customer)
-    # Here you would trigger an email verification flow
+
     return created_customer
 
 @router.get("/customers/me", response_model=CustomerInDB)

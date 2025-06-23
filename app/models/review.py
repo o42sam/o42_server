@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 
 class ReviewBase(BaseModel):
-    author_id: str # Customer ID
+    author_id: str
     target_agent_id: str
     message: str
     stars: int = Field(..., ge=1, le=5)

@@ -16,8 +16,8 @@ class AgentBase(BaseModel):
     gender: Gender
     date_of_birth: date
     profile_photo: Optional[str] = None
-    # GeoJSON format for geospatial queries
-    location: Optional[Any] = None # e.g. {"type": "Point", "coordinates": [longitude, latitude]}
+
+    location: Optional[Any] = None
     email: EmailStr
     phone_number: Optional[str] = None
 
@@ -41,9 +41,9 @@ class AgentInDB(AgentBase):
     hashed_password: str
     isEmailVerified: bool = False
     isPhoneNumberVerified: bool = False
-    personal_identification: Optional[str] = None # URL to image/doc
+    personal_identification: Optional[str] = None
     isPersonalIdentificationVerified: bool = False
-    face_mapping: Optional[Any] = None # Stored face encoding
+    face_mapping: Optional[Any] = None
     subscription_tier: AgentSubscriptionTier = AgentSubscriptionTier.starter
     wallet_id: Optional[str] = None
     two_fa_secret: Optional[str] = None

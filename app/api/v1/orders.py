@@ -3,9 +3,10 @@ from typing import Dict, Any
 
 from app.crud import crud_order, crud_agent
 from app.db.mongodb import get_db
-from app.models.order import PurchaseOrderCreate, SaleOrderCreate
+from app.models.order import PurchaseOrderCreate, PurchaseOrderCreateIn, SaleOrderCreate 
 from app.api.deps import get_current_active_customer
-from app.services import image_generation, geo, notification_service
+from app.services import image_generation, geo
+from app.services.notification_service import create_and_dispatch_notification
 
 router = APIRouter()
 
@@ -24,36 +25,43 @@ async def generate_purchase_order_assets(prompt: str = Body(..., embed=True)):
 
 @router.post("/orders/purchase", status_code=201)
 async def create_purchase_order(
-    order_in: PurchaseOrderCreate,
+
+    order_in: PurchaseOrderCreateIn,
     db=Depends(get_db),
     current_customer: dict = Depends(get_current_active_customer),
 ):
     """
-    Create a purchase order. This will trigger matching and agent linking.
+    Create a purchase order. The creator is derived from the auth token.
     """
-    # Create the purchase order
-    order_in.creator_id = str(current_customer["_id"])
-    new_order = await crud_order.purchase_order.create(db, obj_in=order_in)
+
+
+    order_data = order_in.model_dump()
     
-    # In a real app, this would be a background task
-    # Find and link nearby agents
+
+    order_data["creator_id"] = str(current_customer["_id"])
+
+
+    order_to_create = PurchaseOrderCreate(**order_data)
+    
+
+    new_order = await crud_order.purchase_order.create(db, obj_in=order_to_create)
+    
+
+    
+
     longitude, latitude = current_customer["location"]["coordinates"]
     nearby_agents = await geo.get_agents_in_radius(db, longitude, latitude)
-    agent_ids = [str(agent["_id"]) for agent in nearby_agents]
     
-    await crud_order.purchase_order.update(db, db_obj=new_order, obj_in={"linked_agents_ids": agent_ids})
+    await crud_order.purchase_order.update(db, db_obj=new_order, obj_in={"linked_agents_ids": [str(a["_id"]) for a in nearby_agents]})
     
-    # Notify linked agents
-    for agent_id in agent_ids:
-        # Create DB notification
-        # Send SMS/Email
-        agent = await crud_agent.agent.get(db, id=agent_id)
-        if agent and agent.get("phone_number"):
-            await notification_service.send_sms(agent["phone_number"], "You've been linked to a new purchase order!")
 
-    # Here you would also trigger matching logic against sale orders
-    
+    for agent in nearby_agents:
+        subject = "New Order Alert!"
+        message_body = f"You have been linked to a new purchase order created near your location. Order ID: {str(new_order['_id'])}"
+        await create_and_dispatch_notification(db, target_user=agent, subject=subject, message_body=message_body)
+
     return {"message": "Purchase order created and agents notified.", "order": new_order}
+
 
 @router.post("/orders/sale", status_code=201)
 async def create_sale_order(
@@ -64,14 +72,14 @@ async def create_sale_order(
     """
     Create a sale order. This will trigger matching and agent linking.
     """
-    # Similar logic to purchase order creation:
-    # 1. Set creator_id
-    # 2. Create the order
-    # 3. Link agents via geo-query (as a background task)
-    # 4. Notify agents
-    # 5. Trigger matching logic against purchase orders
+
+
+
+
+
+
     order_in.creator_id = str(current_customer["_id"])
     new_order = await crud_order.sale_order.create(db, obj_in=order_in)
-    # ... remaining logic ...
+
     
     return {"message": "Sale order created.", "order": new_order}

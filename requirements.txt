@@ -11,11 +11,15 @@ python-multipart
 pyotp
 qrcode
 twilio
-brevo
+sib-api-v3-sdk
 google-api-python-client
-google-cloud-aiplatform  # <-- Add this for Vertex AI / Gemini
-google-cloud-storage    # <-- Add this for storing images
+google-cloud-aiplatform
+google-cloud-storage
 httpx
 slowapi
 face-recognition
 numpy
+opencv-python-headless
+google-api-python-client
+google-cloud-aiplatform
+google-cloud-storage

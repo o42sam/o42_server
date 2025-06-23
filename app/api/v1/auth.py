@@ -47,7 +47,7 @@ async def setup_2fa(current_user: dict = Depends(get_current_user), db=Depends(g
 
     return {
         "message": "2FA setup initiated. Scan the QR code with your authenticator app.",
-        "secret": secret, # For testing/manual entry
+        "secret": secret,
         "uri": security.get_2fa_uri(current_user["email"], secret)
     }
 
@@ -69,7 +69,7 @@ async def verify_2fa_login(
     if not security.verify_2fa_code(user["two_fa_secret"], code):
         raise HTTPException(status_code=400, detail="Invalid 2FA code")
         
-    # If verification is successful, issue a token
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
         subject=str(user["_id"]), expires_delta=access_token_expires

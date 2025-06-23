@@ -14,7 +14,7 @@ async def connect_to_mongo():
     print("Connecting to MongoDB...")
     database.client = AsyncIOMotorClient(settings.MONGO_DETAILS)
     database.db = database.client[settings.DB_NAME]
-    # Create indexes for geospatial queries on agents
+
     await database.db.agents.create_index([("location", "2dsphere")])
     print("MongoDB connected!")
 

@@ -1,10 +1,9 @@
-from fastapi import Depends, HTTPException, status, Security
+from fastapi import Depends, HTTPException, status, Security, Query
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from pydantic import ValidationError
 from motor.motor_asyncio import AsyncIOMotorDatabase
 import redis.asyncio as redis
-
 from app.core.config import settings
 from app.db.mongodb import get_db
 from app.db.redis_client import get_redis
@@ -29,7 +28,7 @@ async def get_current_user(
             detail="Could not validate credentials",
         )
         
-    # Check both customer and agent collections
+
     user = await crud_customer.customer.get(db, id=token_data.id)
     if user:
         user["user_type"] = "customer"
@@ -59,3 +58,37 @@ def get_current_active_agent(
     if not current_user.get("isEmailVerified"):
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+async def get_current_user_from_query(
+    token: str = Query(...),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+) -> dict:
+    """
+    Dependency to get the current user from a JWT token in a query parameter.
+    Used for authenticating WebSocket connections.
+    """
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        token_data = token_model.TokenData(id=payload.get("sub"))
+    except (JWTError, ValidationError):
+
+
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials from token",
+        )
+        
+    user = await crud_customer.customer.get(db, id=token_data.id)
+    if user:
+        user["user_type"] = "customer"
+        return user
+
+    user = await crud_agent.agent.get(db, id=token_data.id)
+    if user:
+        user["user_type"] = "agent"
+        return user
+        
+    raise HTTPException(status_code=404, detail="User not found")

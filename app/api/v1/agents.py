@@ -30,7 +30,7 @@ async def register_agent(
         "phone_number": agent_in.phone_number,
     }
     created_agent = await crud_agent.agent.create(db, obj_in=db_agent)
-    # Here you would trigger email and phone verification flows
+
     return created_agent
 
 @router.get("/agents/me", response_model=AgentInDB)

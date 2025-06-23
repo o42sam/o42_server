@@ -21,7 +21,7 @@ class BillingAddress(BaseModel):
 class DebitCard(BaseModel):
     cvv: str
     number: str
-    expiry_date: str # MM/YY
+    expiry_date: str
     billing_address: BillingAddress
     
 class CustomerBase(BaseModel):
@@ -31,8 +31,8 @@ class CustomerBase(BaseModel):
     gender: Gender
     date_of_birth: date
     profile_photo: Optional[str] = None
-    # GeoJSON format
-    location: Optional[Any] = None # e.g. {"type": "Point", "coordinates": [longitude, latitude]}
+
+    location: Optional[Any] = None
     email: EmailStr
 
 class CustomerCreate(BaseModel):

@@ -4,15 +4,17 @@ This is the backend server for the o42 Marketplace application, built with FastA
 
 ## Setup
 
+Using Python version 3.11.3
+
 1.  **Create a virtual environment:**
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    python3 -m venv .venv
+    source venv/bin/activate
     ```
 
 2.  **Install dependencies:**
     ```bash
-    pip install -r requirements.txt
+    pip install --timeout 600 -r requirements.txt
     ```
 
 3.  **Set up environment variables:**

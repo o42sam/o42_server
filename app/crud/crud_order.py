@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.crud import CRUDBase
 from app.models.order import SaleOrderCreate, PurchaseOrderCreate
-# Update schemas can be simple dicts for now
+
 from pydantic import BaseModel 
 
 class UpdateSchema(BaseModel):

@@ -8,7 +8,7 @@ async def get_agents_in_radius(db: AsyncIOMotorDatabase, longitude: float, latit
     Finds agents within a predefined radius from a location.
     Sorts them by subscription tier (Tycoon > Runner > Starter) and then by distance.
     """
-    # MongoDB expects longitude first, then latitude
+
     coordinates = [longitude, latitude]
     radius_in_meters = settings.AGENT_LINKING_RADIUS_KM * 1000
 
@@ -21,7 +21,7 @@ async def get_agents_in_radius(db: AsyncIOMotorDatabase, longitude: float, latit
                 "spherical": True,
             }
         },
-        # Add a field for sorting by subscription tier
+
         {
             "$addFields": {
                 "tierSortOrder": {
@@ -36,7 +36,7 @@ async def get_agents_in_radius(db: AsyncIOMotorDatabase, longitude: float, latit
                 }
             }
         },
-        # Sort by tier first, then by distance
+
         {"$sort": {"tierSortOrder": 1, "dist.calculated": 1}},
     ]
 
