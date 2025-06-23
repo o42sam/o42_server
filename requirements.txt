@@ -1,3 +1,4 @@
+# python3.11.3
 fastapi
 uvicorn[standard]
 gunicorn
@@ -7,6 +8,7 @@ motor
 redis
 python-jose[cryptography]
 passlib[bcrypt]
+bcrypt==3.2.0
 python-multipart
 pyotp
 qrcode
@@ -23,3 +25,12 @@ opencv-python-headless
 google-api-python-client
 google-cloud-aiplatform
 google-cloud-storage
+pytest
+pytest-asyncio
+pytest-mock
+httpx
+torch
+transformers
+sentence-transformers
+Pillow
+scikit-learn

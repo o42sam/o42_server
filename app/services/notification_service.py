@@ -12,7 +12,6 @@ from app.core.config import settings
 from app.crud import crud_notification, crud_message
 from app.models.notification import NotificationCreate
 from app.models.message import MessageCreate
-from app.services.connection_manager import manager
 
 
 

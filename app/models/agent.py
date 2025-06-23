@@ -49,3 +49,11 @@ class AgentInDB(AgentBase):
     two_fa_secret: Optional[str] = None
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
+
+class AgentRegisterOut(BaseModel):
+    """Response model for initial agent registration."""
+    id: str
+    email: EmailStr
+    phone_number: str
+    isEmailVerified: bool
+    isPhoneNumberVerified: bool

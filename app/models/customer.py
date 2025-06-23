@@ -57,3 +57,9 @@ class CustomerInDB(CustomerBase):
     subscription_tier: CustomerSubscriptionTier = CustomerSubscriptionTier.free
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
+
+class CustomerRegisterOut(BaseModel):
+    """Response model for initial customer registration."""
+    id: str
+    email: EmailStr
+    isEmailVerified: bool

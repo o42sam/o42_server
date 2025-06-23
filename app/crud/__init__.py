@@ -1,3 +1,5 @@
+# app/crud/__init__.py
+
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
@@ -5,10 +7,10 @@ from pydantic import BaseModel
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
 
+# --- BASE CLASS DEFINITION (Keep this part) ---
 
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
-
 
 class CRUDBase(Generic[CreateSchemaType, UpdateSchemaType]):
     def __init__(self, collection_name: str):
@@ -52,3 +54,11 @@ class CRUDBase(Generic[CreateSchemaType, UpdateSchemaType]):
     async def remove(self, db: AsyncIOMotorDatabase, *, id: str) -> bool:
         delete_result = await db[self.collection_name].delete_one({"_id": ObjectId(id)})
         return delete_result.deleted_count == 1
+
+from .crud_agent import agent
+from .crud_customer import customer
+from .crud_message import message
+from .crud_notification import notification
+from .crud_order import purchase_order, sale_order
+from .crud_review import review
+from .crud_wallet import wallet, transaction

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 from datetime import datetime
 from enum import Enum
 
@@ -25,6 +25,7 @@ class SaleOrderInDB(SaleOrderBase):
     linked_agents_ids: List[str] = []
     delivering_agent_id: Optional[str] = None
     isDelivered: bool = False
+    matching_purchase_orders: List[Dict[str, Any]] = []
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
 
@@ -49,5 +50,6 @@ class PurchaseOrderInDB(PurchaseOrderBase):
     linked_agents_ids: List[str] = []
     delivering_agent_id: Optional[str] = None
     isDelivered: bool = False
+    matching_sale_orders: List[Dict[str, Any]] = []
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
