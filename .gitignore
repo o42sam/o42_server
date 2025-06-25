@@ -2,3 +2,4 @@
 .commit_msg.txt
 .env
 __pycache__/
+create_super_admin.py

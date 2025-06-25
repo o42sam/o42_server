@@ -8,6 +8,7 @@ from app.crud import admin as crud_admin, customer as crud_customer, agent as cr
 from app.core.security import get_password_hash
 from app.services.notification_service import create_and_dispatch_notification
 from app.models.admin import AdminCreate, AdminUpdate, AdminInDB, AdminOut
+from app.models.order import AllOrdersResponse, AgentOrdersResponse
 
 router = APIRouter()
 
@@ -150,3 +151,55 @@ async def delete_admin(
     
     await crud_admin.remove(db, id=admin_id)
     return
+
+@router.get("/admin/orders/linked/{agent_id}", response_model=AgentOrdersResponse)
+async def get_orders_linked_to_agent(
+    agent_id: str,
+    db=Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """
+    Get all orders a specific agent is linked to.
+    """
+    purchase_orders = await db.purchase_orders.find({"linked_agents_ids": agent_id}).to_list(length=None)
+    sale_orders = await db.sale_orders.find({"linked_agents_ids": agent_id}).to_list(length=None)
+    return {"purchase_orders": purchase_orders, "sale_orders": sale_orders}
+
+@router.get("/admin/orders/delivering/{agent_id}", response_model=AgentOrdersResponse)
+async def get_orders_delivered_by_agent(
+    agent_id: str,
+    db=Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """
+    Get all orders a specific agent is actively delivering.
+    """
+    purchase_orders = await db.purchase_orders.find({"delivering_agent_id": agent_id}).to_list(length=None)
+    sale_orders = await db.sale_orders.find({"delivering_agent_id": agent_id}).to_list(length=None)
+    return {"purchase_orders": purchase_orders, "sale_orders": sale_orders}
+
+
+@router.get("/admin/orders/undelivered", response_model=AllOrdersResponse)
+async def get_all_undelivered_orders(
+    db=Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """
+    Get all orders across the platform that have not yet been delivered.
+    """
+    purchase_orders = await db.purchase_orders.find({"isDelivered": False}).to_list(length=None)
+    sale_orders = await db.sale_orders.find({"isDelivered": False}).to_list(length=None)
+    return {"purchase_orders": purchase_orders, "sale_orders": sale_orders}
+
+
+@router.get("/admin/orders/delivered", response_model=AllOrdersResponse)
+async def get_all_delivered_orders(
+    db=Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """
+    Get all orders across the platform that have been successfully delivered.
+    """
+    purchase_orders = await db.purchase_orders.find({"isDelivered": True}).to_list(length=None)
+    sale_orders = await db.sale_orders.find({"isDelivered": True}).to_list(length=None)
+    return {"purchase_orders": purchase_orders, "sale_orders": sale_orders}

@@ -47,6 +47,7 @@ class AgentInDB(AgentBase):
     subscription_tier: AgentSubscriptionTier = AgentSubscriptionTier.starter
     wallet_id: Optional[str] = None
     two_fa_secret: Optional[str] = None
+    last_login: Optional[datetime] = None
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
 

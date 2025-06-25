@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>o42 Marketplace Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-muted: #888;
+            --accent-color: #4a90e2;
+            --live-color: #28a745;
+            --border-color: #333;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        .auth-section, .card, .chart-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .auth-section input {
+            width: 100%;
+            padding: 8px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 4px;
+        }
+        .live-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-item .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        .stat-item .label {
+            font-size: 1em;
+            color: var(--text-muted);
+        }
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .pulsating-dot {
+            width: 12px;
+            height: 12px;
+            background-color: var(--live-color);
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 1);
+            transform: scale(1);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+            }
+        }
+        .chart-controls {
+            margin-bottom: 15px;
+        }
+        .chart-controls button {
+            padding: 5px 10px;
+            margin-right: 5px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .chart-controls button.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        .error-message {
+            color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+            border: 1px solid #e74c3c;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>o42 Marketplace Analytics</h1>
+
+        <div class="auth-section">
+            <label for="authToken">Admin Auth Token (JWT)</label>
+            <input type="password" id="authToken" placeholder="Paste your admin Bearer token here to load data">
+            <div id="authError" class="error-message" style="display: none;"></div>
+        </div>
+
+        <div class="card">
+            <h2>
+                <div class="live-indicator">
+                    <div class="pulsating-dot"></div>
+                    <span>Live Statistics (Today)</span>
+                </div>
+            </h2>
+            <div id="liveStatsContainer" class="live-stats">
+                </div>
+        </div>
+
+        <div class="chart-card">
+            <h2>User Analytics Over Time</h2>
+            <div class="chart-controls" id="userChartControls">
+                <button data-period="7" class="active">Last 7 Days</button>
+                <button data-period="30">Last Month</button>
+                <button data-period="90">Last 3 Months</button>
+            </div>
+            <canvas id="userChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h2>Order Analytics Over Time</h2>
+            <div class="chart-controls" id="orderChartControls">
+                <button data-period="7" class="active">Last 7 Days</button>
+                <button data-period="30">Last Month</button>
+                <button data-period="90">Last 3 Months</button>
+            </div>
+            <canvas id="orderChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h2>Server Analytics Over Time (Placeholder)</h2>
+            <p>Server response times and requests per minute are best tracked with dedicated Application Performance Monitoring (APM) tools like Prometheus, Grafana, or Datadog. This dashboard focuses on business metrics.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+            const authTokenInput = document.getElementById('authToken');
+            const authErrorEl = document.getElementById('authError');
+            
+            let historicalData = [];
+            let chartInstances = {};
+            let authToken = '';
+
+            const fetchData = async (endpoint) => {
+                if (!authToken) {
+                    authErrorEl.textContent = 'Authentication token is required.';
+                    authErrorEl.style.display = 'block';
+                    return null;
+                }
+                authErrorEl.style.display = 'none';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error('API Fetch Error:', error);
+                    authErrorEl.textContent = `Failed to fetch data: ${error.message}`;
+                    authErrorEl.style.display = 'block';
+                    return null;
+                }
+            };
+
+            const updateLiveStats = (data) => {
+                const container = document.getElementById('liveStatsContainer');
+                container.innerHTML = `
+                    <div class="stat-item"><div class="value">${data.total_customers + data.total_agents}</div><div class="label">Total Users</div></div>
+                    <div class="stat-item"><div class="value">${data.dau_customers + data.dau_agents}</div><div class="label">Daily Active Users</div></div>
+                    <div class="stat-item"><div class="value">${data.new_purchase_orders_today}</div><div class="label">New Purchase Orders</div></div>
+                    <div class="stat-item"><div class="value">${data.new_sale_orders_today}</div><div class="label">New Sale Orders</div></div>
+                    <div class="stat-item"><div class="value">${data.orders_fulfilled_today}</div><div class="label">Orders Fulfilled</div></div>
+                    <div class="stat-item"><div class="value">${data.total_transaction_value_today.toFixed(2)}</div><div class="label">Transaction Value (NGN)</div></div>
+                `;
+            };
+
+            const fetchAndDisplayCurrentData = async () => {
+                const currentData = await fetchData('/analytics/current');
+                if (currentData) {
+                    updateLiveStats(currentData);
+                }
+            };
+
+            const createChart = (ctx, type, datasets) => {
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: { 
+                                type: 'time',
+                                time: { unit: 'day' },
+                                ticks: { color: 'var(--text-muted)' },
+                                grid: { color: 'var(--border-color)' }
+                            },
+                            y: { 
+                                beginAtZero: true,
+                                ticks: { color: 'var(--text-muted)' },
+                                grid: { color: 'var(--border-color)' }
+                            }
+                        },
+                        plugins: {
+                            legend: { labels: { color: 'var(--text-color)' } }
+                        }
+                    }
+                });
+            };
+            
+            const updateChartData = (chart, period) => {
+                const now = new Date();
+                const cutoffDate = new Date(now.setDate(now.getDate() - period));
+                
+                const filteredData = historicalData.filter(d => new Date(d.date) >= cutoffDate);
+                
+                chart.data.labels = filteredData.map(d => d.date);
+
+                if (chart.canvas.id === 'userChart') {
+                    chart.data.datasets[0].data = filteredData.map(d => d.total_customers);
+                    chart.data.datasets[1].data = filteredData.map(d => d.total_agents);
+                    chart.data.datasets[2].data = filteredData.map(d => d.dau_customers);
+                    chart.data.datasets[3].data = filteredData.map(d => d.dau_agents);
+                } else if (chart.canvas.id === 'orderChart') {
+                    chart.data.datasets[0].data = filteredData.map(d => d.new_purchase_orders_today);
+                    chart.data.datasets[1].data = filteredData.map(d => d.new_sale_orders_today);
+                    chart.data.datasets[2].data = filteredData.map(d => d.orders_fulfilled_today);
+                }
+                chart.update();
+            };
+
+            const initializeCharts = () => {
+                // Destroy existing charts if they exist
+                Object.values(chartInstances).forEach(chart => chart.destroy());
+
+                // User Analytics Chart
+                const userCtx = document.getElementById('userChart').getContext('2d');
+                chartInstances.userChart = createChart(userCtx, 'line', [
+                    { label: 'Total Customers', data: [], borderColor: 'rgb(75, 192, 192)', tension: 0.1 },
+                    { label: 'Total Agents', data: [], borderColor: 'rgb(255, 99, 132)', tension: 0.1 },
+                    { label: 'Active Customers (DAU)', data: [], borderColor: 'rgb(75, 192, 192)', borderDash: [5, 5], tension: 0.1 },
+                    { label: 'Active Agents (DAU)', data: [], borderColor: 'rgb(255, 99, 132)', borderDash: [5, 5], tension: 0.1 }
+                ]);
+
+                // Order Analytics Chart
+                const orderCtx = document.getElementById('orderChart').getContext('2d');
+                chartInstances.orderChart = createChart(orderCtx, 'line', [
+                    { label: 'New Purchase Orders', data: [], borderColor: 'rgb(54, 162, 235)', tension: 0.1 },
+                    { label: 'New Sale Orders', data: [], borderColor: 'rgb(255, 206, 86)', tension: 0.1 },
+                    { label: 'Orders Fulfilled', data: [], borderColor: 'rgb(75, 192, 192)', tension: 0.1 }
+                ]);
+                
+                updateChartData(chartInstances.userChart, 7);
+                updateChartData(chartInstances.orderChart, 7);
+            };
+
+            const setupControls = () => {
+                document.querySelectorAll('.chart-controls').forEach(controlDiv => {
+                    controlDiv.addEventListener('click', (e) => {
+                        if (e.target.tagName === 'BUTTON') {
+                            const period = parseInt(e.target.dataset.period, 10);
+                            const chartId = controlDiv.id.replace('Controls', '');
+                            
+                            // Update active button style
+                            controlDiv.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                            e.target.classList.add('active');
+                            
+                            updateChartData(chartInstances[chartId], period);
+                        }
+                    });
+                });
+            };
+            
+            const loadDashboard = async () => {
+                await fetchAndDisplayCurrentData();
+                historicalData = await fetchData('/analytics/historical');
+                if (historicalData) {
+                    initializeCharts();
+                }
+            };
+            
+            authTokenInput.addEventListener('change', (e) => {
+                authToken = e.target.value.trim();
+                if (authToken) {
+                    loadDashboard();
+                    setInterval(fetchAndDisplayCurrentData, 5000); // Refresh live stats every 5 seconds
+                }
+            });
+
+            setupControls();
+        });
+    </script>
+</body>
+</html>

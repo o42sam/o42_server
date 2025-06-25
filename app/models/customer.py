@@ -55,6 +55,7 @@ class CustomerInDB(CustomerBase):
     wallet_id: Optional[str] = None
     debit_cards: List[DebitCard] = []
     subscription_tier: CustomerSubscriptionTier = CustomerSubscriptionTier.free
+    last_login: Optional[datetime] = None
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
 

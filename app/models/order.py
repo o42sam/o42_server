@@ -53,3 +53,13 @@ class PurchaseOrderInDB(PurchaseOrderBase):
     matching_sale_orders: List[Dict[str, Any]] = []
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
+
+class AgentOrdersResponse(BaseModel):
+    """A response model to show orders linked to or delivered by an agent."""
+    purchase_orders: List[PurchaseOrderInDB]
+    sale_orders: List[SaleOrderInDB]
+
+class AllOrdersResponse(BaseModel):
+    """A response model for returning a list of all order types."""
+    purchase_orders: List[PurchaseOrderInDB]
+    sale_orders: List[SaleOrderInDB]

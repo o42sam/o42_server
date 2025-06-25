@@ -7,9 +7,9 @@ from app.crud import purchase_order, sale_order # <-- CORRECTED IMPORT
 from app.db.mongodb import get_db
 from app.models.order import (
     PurchaseOrderCreate, PurchaseOrderCreateIn, PurchaseOrderInDB,
-    SaleOrderCreate, SaleOrderInDB
+    SaleOrderCreate, SaleOrderInDB, AgentOrdersResponse, AllOrdersResponse
 )
-from app.api.deps import get_current_active_customer, get_current_user
+from app.api.deps import get_current_active_customer, get_current_user, get_current_active_agent
 from app.services import image_generation, geo
 from app.services.notification_service import create_and_dispatch_notification
 from app.services.matching_service import run_matching_cycle
@@ -123,3 +123,83 @@ async def delete_sale_order(
     
     await sale_order.remove(db, id=order_id)
     return
+
+@router.get("/orders/linked/me", response_model=AgentOrdersResponse)
+async def get_my_linked_orders(
+    db=Depends(get_db),
+    current_agent: dict = Depends(get_current_active_agent)
+):
+    """
+    Retrieve all purchase and sale orders that the current agent is linked to
+    but not yet actively delivering.
+    """
+    agent_id = str(current_agent["_id"])
+    
+    # Find orders where the agent is in the `linked_agents_ids` array
+    # and not yet the `delivering_agent_id`.
+    linked_purchase_orders = await db.purchase_orders.find({
+        "linked_agents_ids": agent_id,
+        "delivering_agent_id": None
+    }).to_list(length=None)
+    
+    linked_sale_orders = await db.sale_orders.find({
+        "linked_agents_ids": agent_id,
+        "delivering_agent_id": None
+    }).to_list(length=None)
+    
+    return {
+        "purchase_orders": linked_purchase_orders,
+        "sale_orders": linked_sale_orders
+    }
+
+@router.get("/orders/delivering/me", response_model=AgentOrdersResponse)
+async def get_my_delivering_orders(
+    db=Depends(get_db),
+    current_agent: dict = Depends(get_current_active_agent)
+):
+    """
+    Retrieve all purchase and sale orders that the current agent is
+    actively delivering.
+    """
+    agent_id = str(current_agent["_id"])
+    
+    delivering_purchase_orders = await db.purchase_orders.find({
+        "delivering_agent_id": agent_id
+    }).to_list(length=None)
+    
+    delivering_sale_orders = await db.sale_orders.find({
+        "delivering_agent_id": agent_id
+    }).to_list(length=None)
+    
+    return {
+        "purchase_orders": delivering_purchase_orders,
+        "sale_orders": delivering_sale_orders
+    }
+
+@router.get("/orders/my-orders", response_model=AllOrdersResponse)
+async def get_my_created_orders(
+    db=Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Retrieve all purchase and sale orders created by the currently
+    authenticated user.
+    """
+    # 1. Get the ID of the authenticated user from the token.
+    user_id = str(current_user["_id"])
+    
+    # 2. Find all purchase orders where the 'creator_id' matches the user's ID.
+    my_purchase_orders = await db.purchase_orders.find({
+        "creator_id": user_id
+    }).to_list(length=None)
+    
+    # 3. Find all sale orders where the 'creator_id' matches the user's ID.
+    my_sale_orders = await db.sale_orders.find({
+        "creator_id": user_id
+    }).to_list(length=None)
+    
+    # 4. Return the orders structured by the response model.
+    return {
+        "purchase_orders": my_purchase_orders,
+        "sale_orders": my_sale_orders
+    }
