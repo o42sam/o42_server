@@ -63,3 +63,19 @@ class AllOrdersResponse(BaseModel):
     """A response model for returning a list of all order types."""
     purchase_orders: List[PurchaseOrderInDB]
     sale_orders: List[SaleOrderInDB]
+
+class SaleOrderUpdate(BaseModel):
+    """Defines fields that can be updated for a Sale Order."""
+    sale_type: Optional[SaleType] = None
+    price: Optional[float] = None
+    commission_percentage: Optional[float] = Field(None, ge=0, le=100)
+    location: Optional[Any] = None
+    delivering_agent_id: Optional[str] = None
+    isDelivered: Optional[bool] = None
+
+class PurchaseOrderUpdate(BaseModel):
+    """Defines fields that can be updated for a Purchase Order."""
+    product_description: Optional[str] = None
+    product_image: Optional[str] = None
+    delivering_agent_id: Optional[str] = None
+    isDelivered: Optional[bool] = None

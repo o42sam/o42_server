@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api.v1 import agents, auth, customers, messaging, orders, wallets, admin, analytics
+from app.api.v1 import agents, auth, customers, messaging, orders, wallets, admin, analytics, products, users
 from app.core.config import settings
 from app.db.mongodb import close_mongo_connection, connect_to_mongo
 from app.db.redis_client import close_redis_connection, connect_to_redis
@@ -47,9 +47,11 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["Authentication"])
+app.include_router(users.router, prefix=settings.API_V1_STR, tags=["Users"])
 app.include_router(customers.router, prefix=settings.API_V1_STR, tags=["Customers"])
 app.include_router(agents.router, prefix=settings.API_V1_STR, tags=["Agents"])
 app.include_router(orders.router, prefix=settings.API_V1_STR, tags=["Orders"])
+app.include_router(products.router, prefix=settings.API_V1_STR, tags=["Products"])
 app.include_router(wallets.router, prefix=settings.API_V1_STR, tags=["Wallets & Payments"])
 app.include_router(messaging.router, prefix=settings.API_V1_STR, tags=["Messaging"])
 app.include_router(admin.router, prefix=settings.API_V1_STR, tags=["Admin"])

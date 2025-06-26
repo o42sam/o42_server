@@ -38,13 +38,6 @@ async def register_customer(
         "isEmailVerified": created_customer.get("isEmailVerified", False)
     }
 
-@router.get("/customers/me", response_model=CustomerInDB)
-def read_customer_me(current_customer: dict = Depends(get_current_user)):
-    """
-    Get current customer's profile.
-    """
-    return current_customer
-
 @router.put("/customers/me", response_model=CustomerInDB)
 async def update_customer_me(
     customer_in: CustomerUpdate,

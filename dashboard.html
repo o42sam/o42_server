@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>o42 Marketplace Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a; --card-bg: #2a2a2a; --text-color: #f0f0f0; --text-muted: #888;
+            --accent-color: #5a9bd5; --success-color: #4caf50; --error-color: #f44336;
+            --border-color: #444; --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 2em; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5em; margin-bottom: 1.5em; }
+        h1, h2 { border-bottom: 1px solid var(--border-color); padding-bottom: 0.5em; margin-top: 0; }
+        input, select, textarea, button { font-family: var(--font-family); font-size: 1em; padding: 0.8em; border-radius: 4px; border: 1px solid var(--border-color); background-color: #333; color: var(--text-color); margin-bottom: 1em; width: 100%; box-sizing: border-box; }
+        button { background-color: var(--accent-color); color: white; border: none; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #7aaee2; }
+        button.secondary { background-color: #555; }
+        button.secondary:hover { background-color: #666; }
+        button.danger { background-color: var(--error-color); }
+        button.danger:hover { background-color: #f66a5d; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; }
+        .full-width { grid-column: 1 / -1; }
+        .link-button { background: none; border: none; color: var(--accent-color); cursor: pointer; text-decoration: underline; padding: 0; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
+        .modal-content { background-color: var(--card-bg); margin: 10% auto; padding: 20px; border: 1px solid var(--border-color); width: 80%; max-width: 700px; border-radius: 8px; position: relative; }
+        .close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        #data-display-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; }
+        .data-item { border: 1px solid var(--border-color); padding: 1em; border-radius: 4px; }
+        .data-item p { margin: 0.5em 0; }
+        .data-item strong { color: var(--accent-color); }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--accent-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="login-page" class="page active">
+            <div class="card">
+                <h1>o42 Marketplace Login</h1>
+                <form id="login-form">
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+                <p>Don't have an account? <button class="link-button" onclick="showPage('signup-page')">Sign Up</button></p>
+                <div id="login-error" style="color: var(--error-color); margin-top: 1em;"></div>
+            </div>
+        </div>
+
+        <div id="signup-page" class="page">
+            <div class="card">
+                <h1>Sign Up</h1>
+                <form id="signup-form">
+                    <input type="email" id="signup-email" placeholder="Email" required>
+                    <input type="password" id="signup-password" placeholder="Password" required>
+                    <select id="signup-role" required>
+                        <option value="customer">Sign up as a Customer</option>
+                        <option value="agent">Sign up as an Agent</option>
+                    </select>
+                    <input type="text" id="signup-phone" placeholder="Phone Number (for Agents)" style="display: none;">
+                    <button type="submit">Create Account</button>
+                </form>
+                <p>Already have an account? <button class="link-button" onclick="showPage('login-page')">Login</button></p>
+                <div id="signup-message" style="margin-top: 1em;"></div>
+            </div>
+        </div>
+        
+        <div id="dashboard-page" class="page">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1 id="welcome-message">Welcome!</h1>
+                    <button id="logout-button" class="secondary">Logout</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Actions</h2>
+                <button onclick="showModal('sale-order-modal')">Create Sale Order</button>
+                <button onclick="showModal('purchase-order-modal')">Create Purchase Order</button>
+                <button onclick="showModal('review-modal')">Create Review</button>
+                <button id="create-wallet-button">Create Wallet</button>
+                <div id="action-message" style="margin-top: 1em;"></div>
+            </div>
+            
+            <div class="card">
+                <h2>My Data</h2>
+                <button id="refresh-data-button">Refresh Data</button>
+                <div id="data-display-grid">
+                    <div>
+                        <h3>My Orders</h3>
+                        <div id="my-orders-container"></div>
+                    </div>
+                    <div>
+                        <h3>My Reviews</h3>
+                        <div id="my-reviews-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sale-order-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('sale-order-modal')">&times;</span>
+            <h2>Create Sale Order</h2>
+            <form id="sale-order-form">
+                <p>Step 1: Upload a product image for AI analysis.</p>
+                <input type="file" id="sale-order-image-upload" accept="image/*" required>
+                <div id="sale-order-spinner" style="display: none;" class="spinner"></div>
+                
+                <div id="sale-order-details" style="display: none;">
+                    <hr>
+                    <p>Step 2: Review generated details and set your price.</p>
+                    <div class="form-grid">
+                        <input type="text" id="sale-order-product-name" placeholder="Product Name" required>
+                        <select id="sale-order-category" required></select>
+                        <textarea id="sale-order-description" placeholder="Product Description" class="full-width" rows="4" required></textarea>
+                        <input type="number" id="sale-order-price" placeholder="Price (NGN)" step="0.01" required>
+                        <input type="number" id="sale-order-commission" placeholder="Agent Commission (%)" step="0.01" required>
+                        <input type="hidden" id="sale-order-product-id" value="mock_product_id"> 
+                    </div>
+                    <button type="submit">Create Sale Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="purchase-order-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('purchase-order-modal')">&times;</span>
+            <h2>Create Purchase Order</h2>
+            <form id="purchase-order-form">
+                <p>Step 1: Describe the product you want to buy. Our AI will generate an image and search for it.</p>
+                <textarea id="po-prompt" placeholder="e.g., 'A pair of red Nike running shoes, size 10'" class="full-width" rows="3" required></textarea>
+                <button type="button" id="po-generate-button">Generate Image & Search</button>
+                <div id="po-spinner" style="display: none;" class="spinner"></div>
+
+                <div id="po-results-container" style="display: none;">
+                    <hr>
+                    <p>Step 2: Review the generated assets and create your order.</p>
+                    <h4>Generated Image:</h4>
+                    <img id="po-generated-image" src="" alt="Generated Product Image" style="max-width: 200px; border-radius: 4px; margin-bottom: 1em;">
+                    
+                    <h4>Related Web Results:</h4>
+                    <ul id="po-search-results" style="font-size: 0.9em; list-style-type: none; padding-left: 0;"></ul>
+
+                    <button type="submit">Create Purchase Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+        let authToken = null;
+        let currentUser = null;
+
+        // --- API Client ---
+        async function apiFetch(endpoint, options = {}) {
+            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP Error: ${response.status}`);
+            }
+            // Handle 204 No Content
+            return response.status === 204 ? null : response.json();
+        }
+        
+        // --- Page Navigation ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function showModal(modalId) { document.getElementById(modalId).style.display = 'block'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        
+        // --- Authentication ---
+        function handleLogout() {
+            apiFetch('/auth/logout', { method: 'POST' }).catch(err => console.error("Logout failed but proceeding client-side:", err));
+            localStorage.removeItem('authToken');
+            authToken = null;
+            currentUser = null;
+            showPage('login-page');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.textContent = '';
+            
+            try {
+                const data = new URLSearchParams();
+                data.append('username', email);
+                data.append('password', password);
+                
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: data
+                });
+
+                if (!response.ok) throw new Error((await response.json()).detail);
+                
+                const { access_token } = await response.json();
+                authToken = access_token;
+                localStorage.setItem('authToken', authToken);
+                await loadDashboard();
+            } catch (error) {
+                errorDiv.textContent = `Login failed: ${error.message}`;
+            }
+        }
+async function loadDashboard() {
+    try {
+        // This single API call now works for any user type
+        currentUser = await apiFetch('/users/me'); 
+        
+        if (currentUser) {
+            document.getElementById('welcome-message').textContent = `Welcome, ${currentUser.email}!`;
+            showPage('dashboard-page');
+            loadUserData(); // Function to fetch orders, reviews, etc.
+        } else {
+            // This case should not be hit if token is valid, but as a safeguard:
+            handleLogout();
+        }
+    } catch(error) {
+        console.error("Failed to load user profile, logging out.", error);
+        handleLogout();
+    }
+}
+        
+        async function checkSession() {
+            authToken = localStorage.getItem('authToken');
+            if (authToken) {
+                await loadDashboard();
+            } else {
+                showPage('login-page');
+            }
+        }
+
+        // --- Data Loading & Rendering ---
+        async function loadUserData() {
+            try {
+                const [ordersData, reviewsData] = await Promise.all([
+                    apiFetch('/orders/my-orders'),
+                    apiFetch('/reviews/me')
+                ]);
+                renderMyOrders(ordersData);
+                renderMyReviews(reviewsData);
+            } catch(error) {
+                console.error("Failed to load user data:", error);
+            }
+        }
+
+        function renderMyOrders({ purchase_orders, sale_orders }) {
+            const container = document.getElementById('my-orders-container');
+            container.innerHTML = '<h4>Purchase Orders</h4>';
+            if (purchase_orders.length === 0) container.innerHTML += '<p>None yet.</p>';
+            purchase_orders.forEach(order => {
+                container.innerHTML += `<div class="data-item"><p><strong>ID:</strong> ${order.id}</p><p><strong>Desc:</strong> ${order.product_description}</p></div>`;
+            });
+
+            container.innerHTML += '<h4>Sale Orders</h4>';
+            if (sale_orders.length === 0) container.innerHTML += '<p>None yet.</p>';
+            sale_orders.forEach(order => {
+                 container.innerHTML += `<div class="data-item"><p><strong>ID:</strong> ${order.id}</p><p><strong>Price:</strong> ${order.price} NGN</p></div>`;
+            });
+        }
+        function renderMyReviews(reviews) {
+            const container = document.getElementById('my-reviews-container');
+            container.innerHTML = '';
+             if (reviews.length === 0) container.innerHTML += '<p>None yet.</p>';
+            reviews.forEach(review => {
+                container.innerHTML += `<div class="data-item"><p><strong>Rating:</strong> ${'⭐'.repeat(review.stars)}</p><p>${review.message}</p></div>`;
+            });
+        }
+
+        // --- Sale Order Logic ---
+        async function handleImageAnalysis(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const spinner = document.getElementById('sale-order-spinner');
+            const detailsDiv = document.getElementById('sale-order-details');
+            spinner.style.display = 'block';
+            detailsDiv.style.display = 'none';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/products/analyze-image`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    body: formData
+                });
+                if (!response.ok) throw new Error((await response.json()).detail);
+                const data = await response.json();
+                
+                // Populate the form
+                document.getElementById('sale-order-product-name').value = data.name;
+                document.getElementById('sale-order-description').value = data.description;
+                
+                // Populate category dropdown
+                const categorySelect = document.getElementById('sale-order-category');
+                categorySelect.innerHTML = `<option value="${data.suggested_category}">${data.suggested_category}</option>`;
+                
+                spinner.style.display = 'none';
+                detailsDiv.style.display = 'block';
+            } catch (error) {
+                alert(`Image analysis failed: ${error.message}`);
+                spinner.style.display = 'none';
+            }
+        }
+        
+        async function handleCreateWallet() {
+            const actionMessageDiv = document.getElementById('action-message');
+            try {
+                if(confirm("Are you sure you want to create a wallet? You can only have one.")) {
+                    const wallet = await apiFetch('/wallets', { method: 'POST' });
+                    actionMessageDiv.style.color = 'var(--success-color)';
+                    actionMessageDiv.textContent = `Wallet created successfully! Account Number: ${wallet.paystack_account_id}`;
+                }
+            } catch (error) {
+                actionMessageDiv.style.color = 'var(--error-color)';
+                actionMessageDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+        async function handleGeneratePurchaseAssets() {
+            const prompt = document.getElementById('po-prompt').value;
+            if (!prompt) {
+                alert("Please enter a product description.");
+                return;
+            }
+
+            const spinner = document.getElementById('po-spinner');
+            const resultsContainer = document.getElementById('po-results-container');
+            spinner.style.display = 'block';
+            resultsContainer.style.display = 'none';
+
+            try {
+                const data = { prompt: prompt };
+                const response = await apiFetch('/orders/purchase/generate-assets', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                // Display generated image
+                document.getElementById('po-generated-image').src = response.generated_image_url;
+
+                // Display search results
+                const searchResultsList = document.getElementById('po-search-results');
+                searchResultsList.innerHTML = '';
+                if (response.search_results && response.search_results.length > 0) {
+                     response.search_results.forEach(item => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a><br><small style="color: var(--text-muted);">${item.snippet}</small>`;
+                        li.style.marginBottom = '1em';
+                        searchResultsList.appendChild(li);
+                    });
+                } else {
+                    searchResultsList.innerHTML = '<li>No web results found.</li>';
+                }
+
+                spinner.style.display = 'none';
+                resultsContainer.style.display = 'block';
+
+            } catch (error) {
+                alert(`Asset generation failed: ${error.message}`);
+                spinner.style.display = 'none';
+            }
+        }
+
+        async function handleCreatePurchaseOrder(e) {
+            e.preventDefault();
+            const description = document.getElementById('po-prompt').value;
+            const imageUrl = document.getElementById('po-generated-image').src;
+
+            if (!description || !imageUrl) {
+                alert("Please generate an image before creating the order.");
+                return;
+            }
+
+            try {
+                const orderData = {
+                    product_description: description,
+                    product_image: imageUrl
+                };
+                await apiFetch('/orders/purchase', {
+                    method: 'POST',
+                    body: JSON.stringify(orderData)
+                });
+                alert("Purchase Order created successfully!");
+                closeModal('purchase-order-modal');
+                loadUserData(); // Refresh the order list
+            } catch (error) {
+                alert(`Failed to create purchase order: ${error.message}`);
+            }
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        document.getElementById('logout-button').addEventListener('click', handleLogout);
+        document.getElementById('refresh-data-button').addEventListener('click', loadUserData);
+        document.getElementById('create-wallet-button').addEventListener('click', handleCreateWallet);
+        document.getElementById('sale-order-image-upload').addEventListener('change', handleImageAnalysis);
+
+        // Dummy listener for sale order form
+        document.getElementById('sale-order-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert("Sale Order form submission logic not fully implemented in this example.");
+            closeModal('sale-order-modal');
+        });
+        
+        // Initial check on page load
+        checkSession();
+    </script>
+</body>
+</html>

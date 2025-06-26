@@ -41,3 +41,17 @@ class ProductInDB(ProductBase):
     id: str = Field(..., alias="_id")
     created: datetime = Field(default_factory=datetime.utcnow)
     lastUpdated: datetime = Field(default_factory=datetime.utcnow)
+
+class ProductAnalysisResponse(BaseModel):
+    name: str
+    description: str
+    suggested_category: str
+
+class ProductUpdate(BaseModel):
+    """Defines fields that can be updated for a Product."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[ProductCategory] = None
+    condition: Optional[ProductCondition] = None
+    images: Optional[List[str]] = None
+    video: Optional[str] = None

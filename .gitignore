@@ -3,4 +3,3 @@
 .env
 __pycache__/
 create_super_admin.py
-analytics.html

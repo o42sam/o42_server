@@ -34,3 +34,8 @@ class WithdrawalRequest(BaseModel):
     account_number: str = Field(..., description="Destination bank account number")
     bank_code: str = Field(..., description="Paystack code for the destination bank")
     two_fa_code: str = Field(..., min_length=6, max_length=6, description="6-digit 2FA code from authenticator app")
+
+class WalletUpdate(BaseModel):
+    """Defines fields that can be updated for a Wallet (admin-only)."""
+    balance: Optional[float] = None
+    restrictions: Optional[List[str]] = None

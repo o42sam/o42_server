@@ -64,6 +64,16 @@ async def login(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.post("/auth/logout")
+async def logout(current_user: dict = Depends(get_current_user)):
+    """
+    Logout the current user. In a real-world scenario with stateful tokens,
+    this would blacklist the token. For this stateless JWT setup, it's a
+    confirmation endpoint for the client to proceed with token deletion.
+    """
+    # In a more complex system, you would add the token's JTI (JWT ID)
+    # to a blacklist in Redis with an expiry matching the token's.
+    return {"message": "Successfully logged out."}
 
 @router.post("/auth/2fa/setup")
 async def setup_2fa(current_user: dict = Depends(get_current_user), db=Depends(get_db)):

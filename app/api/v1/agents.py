@@ -39,14 +39,6 @@ async def register_agent(
         "isPhoneNumberVerified": created_agent.get("isPhoneNumberVerified", False)
     }
 
-
-@router.get("/agents/me", response_model=AgentInDB)
-def read_agent_me(current_agent: dict = Depends(get_current_user)): # <-- CHANGE HERE
-    """
-    Get current agent's profile.
-    """
-    return current_agent
-
 @router.put("/agents/me/verify-face", response_model=AgentInDB)
 async def upload_face_verification_video(
     db = Depends(get_db),

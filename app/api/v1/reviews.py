@@ -10,6 +10,17 @@ from app.crud import review as crud_review
 
 router = APIRouter()
 
+@router.get("/reviews/me", response_model=List[ReviewInDB])
+async def get_my_reviews(
+    db=Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get all reviews written by the currently authenticated user.
+    """
+    reviews = await db.reviews.find({"author_id": str(current_user["_id"])}).to_list(length=None)
+    return reviews
+
 @router.post("/reviews", response_model=ReviewInDB, status_code=status.HTTP_201_CREATED)
 async def create_review(
     review_in: ReviewCreate,
